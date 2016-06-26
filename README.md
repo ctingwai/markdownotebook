@@ -5,6 +5,11 @@ All notes are stored in the browser in JSON format using JSON.stringify()
 method. All notes will be converted from markdown into HTML using the markdown
 parser [marked](https://github.com/chjj/marked).
 
+# Installation
+1. Clone the entire repository into document root
+2. Run `npm install --production`
+3. Refresh the page
+
 # License
 Copyright © 2016 Chong Ting Wai [ctingwai@hotmail.com](mailto:ctingwai@hotmail.com)
 This work is free. You can redistribute it and/or modify it under the terms of the
