@@ -1,0 +1,16 @@
+#root-container {
+    margin: 20px;
+}
+.editor-container {
+    min-height: 20rem;
+}
+.ui.form > div.field > textarea.text-editor {
+    height: 15rem;
+    width: 100%;
+}
+.ui.dropdown.notebooks.selection {
+    padding: 5px;
+}
+.editor-footer, .editor-menu {
+    text-align: right;
+}
