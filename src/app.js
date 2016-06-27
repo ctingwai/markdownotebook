@@ -117,6 +117,11 @@ function isUnique(notebook, title) {
  * */
 function createNote(newData, createdDate) {
     let res = null;
+    if(!newData.title) {
+        let msg = 'Note title cannot be empty';
+        message.showMessage('Error Creating Note', msg, true);
+        return null;
+    }
     if(!isUnique(newData.notebook, newData.title)) {
         let msg = 'The note already exist in ' + newData.notebook + ', please choose another name for your note';
         message.showMessage('Error Creating Note', msg, true);

@@ -32,16 +32,19 @@ export default class EditorFooter extends Component {
     }
 
     render() {
-        let saveIcon = 'icon save', saveText = 'Save';
+        let saveIcon = 'icon save', saveText = 'Save', buttonHint = '';
         if(this.state.noteState == 'saving') {
             saveIcon = 'icon loading';
             saveText = 'Saving';
+            buttonHint = '';
         } else if(this.state.noteState == 'saved') {
             saveIcon = 'icon checkmark';
             saveText = 'Saved';
+            buttonHint = 'positive';
         } else if(this.state.noteState == 'error') {
             saveIcon = 'icon warning sign';
             saveText = 'Error';
+            buttonHint = 'negative';
         }
 
         return (
@@ -49,7 +52,7 @@ export default class EditorFooter extends Component {
                 <button className='ui button labeled icon' onClick={this.handleCreate.bind(this)}>
                     <i className='icon add square'></i> New Note
                 </button>
-                <button className='ui button labeled icon' onClick={this.handleSave.bind(this)}>
+                <button className={'ui button labeled icon ' + buttonHint} onClick={this.handleSave.bind(this)}>
                     <i className={saveIcon}></i>{saveText}
                 </button>
             </div>
