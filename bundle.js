@@ -69,7 +69,11 @@
 
 	var _Editor2 = _interopRequireDefault(_Editor);
 
-	var _jquery = __webpack_require__(281);
+	var _Message = __webpack_require__(281);
+
+	var _Message2 = _interopRequireDefault(_Message);
+
+	var _jquery = __webpack_require__(282);
 
 	var _jquery2 = _interopRequireDefault(_jquery);
 
@@ -134,6 +138,7 @@
 	 * Handler function to delete a note from the notebook
 	 * */
 	function deleteNote(notebook, title) {
+	    var res = false;
 	    //Search for matching note in title
 	    notes.forEach(function (el, i) {
 	        if (el.name === notebook) {
@@ -141,12 +146,34 @@
 	                if (el2.title === title) {
 	                    notes[i].notes.splice(j, 1);
 	                    localStorage.setItem(notebook, JSON.stringify(notes[i]));
+	                    res = true;
 	                }
 	            });
 	        }
 	    });
 
 	    notebookMenu.refresh(notes);
+	    return res;
+	}
+
+	/**
+	 * Find duplicate note title
+	 *
+	 * @param notebook Notebook to search
+	 * @param title Title of the note
+	 * */
+	function isUnique(notebook, title) {
+	    var unique = true;
+	    notes.forEach(function (n, i) {
+	        if (n.name === notebook) {
+	            n.notes.forEach(function (m, j) {
+	                if (m.title === title) {
+	                    unique = false;
+	                }
+	            });
+	        }
+	    });
+	    return unique;
 	}
 
 	/**
@@ -160,6 +187,16 @@
 	 * */
 	function createNote(newData, createdDate) {
 	    var res = null;
+	    if (!newData.title) {
+	        var msg = 'Note title cannot be empty';
+	        message.showMessage('Error Creating Note', msg, true);
+	        return null;
+	    }
+	    if (!isUnique(newData.notebook, newData.title)) {
+	        var _msg = 'The note already exist in ' + newData.notebook + ', please choose another name for your note';
+	        message.showMessage('Error Creating Note', _msg, true);
+	        return null;
+	    }
 	    notes.forEach(function (el, i) {
 	        if (el.name === newData.notebook) {
 	            notes[i].notes.push({
@@ -178,12 +215,13 @@
 	 * Update a note by deleting the original note and creating the new note
 	 * */
 	function updateNote(original, newData) {
-	    var res = null;
+	    var res1 = null,
+	        res2 = null;
 	    notes.forEach(function (el, i) {
-	        deleteNote(original.notebook, original.title);
-	        createNote(newData, original.created);
+	        res1 = deleteNote(original.notebook, original.title);
+	        res2 = createNote(newData, original.created);
 	    });
-	    return res;
+	    return res1 && res2;
 	}
 
 	/**
@@ -203,8 +241,8 @@
 	 * */
 	function saveNote(data) {
 	    var editNote = data.edit;
-
 	    var res = null;
+
 	    if (editNote.title && editNote.notebook) {
 	        res = updateNote({
 	            title: editNote.title,
@@ -224,6 +262,7 @@
 	    }
 
 	    notebookMenu.refresh(notes);
+	    return !!res;
 	}
 
 	var notebookMenu = _reactDom2.default.render(_react2.default.createElement(_NotebookMenu2.default, { items: notes,
@@ -232,6 +271,7 @@
 	    edit: openNote }), document.getElementById('nav'));
 	var editor = _reactDom2.default.render(_react2.default.createElement(_Editor2.default, { notebooks: notes,
 	    save: saveNote }), document.getElementById('editor'));
+	var message = _reactDom2.default.render(_react2.default.createElement(_Message2.default, null), document.getElementById('message-display'));
 
 /***/ },
 /* 2 */
@@ -31329,6 +31369,7 @@
 	    }, {
 	        key: 'handleTextChange',
 	        value: function handleTextChange(e) {
+	            this.footer.noteModified();
 	            this.setState({ text: e.target.value });
 	        }
 	    }, {
@@ -31339,7 +31380,7 @@
 	    }, {
 	        key: 'handleSave',
 	        value: function handleSave() {
-	            this.props.save({
+	            return this.props.save({
 	                title: this.state.title,
 	                text: this.state.text,
 	                notebook: this.state.notebook,
@@ -31458,6 +31499,9 @@
 	                    'div',
 	                    { className: 'ui segment secondary' },
 	                    _react2.default.createElement(_EditorFooter2.default, { saveFn: this.handleSave.bind(this),
+	                        ref: function ref(c) {
+	                            return _this2.footer = c;
+	                        },
 	                        createFn: this.handleNewNote.bind(this) })
 	                )
 	            );
@@ -31577,26 +31621,69 @@
 	    function EditorFooter() {
 	        _classCallCheck(this, EditorFooter);
 
-	        return _possibleConstructorReturn(this, Object.getPrototypeOf(EditorFooter).apply(this, arguments));
+	        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(EditorFooter).call(this));
+
+	        _this.state = {
+	            noteState: 'modified'
+	        };
+	        return _this;
 	    }
 
 	    _createClass(EditorFooter, [{
+	        key: 'handleSave',
+	        value: function handleSave() {
+	            this.setState({ noteState: 'saving' });
+	            if (this.props.saveFn()) {
+	                this.setState({ noteState: 'saved' });
+	            } else {
+	                this.setState({ noteState: 'error' });
+	            }
+	        }
+	    }, {
+	        key: 'handleCreate',
+	        value: function handleCreate() {
+	            this.setState({ noteState: 'modified' });
+	            this.props.createFn();
+	        }
+	    }, {
+	        key: 'noteModified',
+	        value: function noteModified() {
+	            this.setState({ noteState: 'modified' });
+	        }
+	    }, {
 	        key: 'render',
 	        value: function render() {
+	            var saveIcon = 'icon save',
+	                saveText = 'Save',
+	                buttonHint = '';
+	            if (this.state.noteState == 'saving') {
+	                saveIcon = 'icon loading';
+	                saveText = 'Saving';
+	                buttonHint = '';
+	            } else if (this.state.noteState == 'saved') {
+	                saveIcon = 'icon checkmark';
+	                saveText = 'Saved';
+	                buttonHint = 'positive';
+	            } else if (this.state.noteState == 'error') {
+	                saveIcon = 'icon warning sign';
+	                saveText = 'Error';
+	                buttonHint = 'negative';
+	            }
+
 	            return _react2.default.createElement(
 	                'div',
 	                { className: 'editor-footer' },
 	                _react2.default.createElement(
 	                    'button',
-	                    { className: 'ui button labeled icon', onClick: this.props.createFn },
+	                    { className: 'ui button labeled icon', onClick: this.handleCreate.bind(this) },
 	                    _react2.default.createElement('i', { className: 'icon add square' }),
 	                    ' New Note'
 	                ),
 	                _react2.default.createElement(
 	                    'button',
-	                    { className: 'ui button labeled icon', onClick: this.props.saveFn },
-	                    _react2.default.createElement('i', { className: 'icon save' }),
-	                    'Save'
+	                    { className: 'ui button labeled icon ' + buttonHint, onClick: this.handleSave.bind(this) },
+	                    _react2.default.createElement('i', { className: saveIcon }),
+	                    saveText
 	                )
 	            );
 	        }
@@ -32798,6 +32885,93 @@
 
 /***/ },
 /* 281 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _react = __webpack_require__(2);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var Message = function (_Component) {
+	    _inherits(Message, _Component);
+
+	    function Message() {
+	        _classCallCheck(this, Message);
+
+	        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Message).call(this));
+
+	        _this.state = {
+	            message: '',
+	            title: '',
+	            error: false
+	        };
+	        return _this;
+	    }
+
+	    _createClass(Message, [{
+	        key: 'clearMessage',
+	        value: function clearMessage() {
+	            this.setState({
+	                message: '',
+	                title: '',
+	                error: false
+	            });
+	        }
+	    }, {
+	        key: 'showMessage',
+	        value: function showMessage(title, message, isError) {
+	            this.setState({
+	                message: message,
+	                title: title,
+	                error: !!isError
+	            });
+	        }
+	    }, {
+	        key: 'render',
+	        value: function render() {
+	            var messageClass = 'ui message';
+	            if (this.state.error) messageClass += ' negative';
+	            var messageHtml = _react2.default.createElement(
+	                'div',
+	                { className: messageClass },
+	                _react2.default.createElement('i', { className: 'close icon', onClick: this.clearMessage.bind(this) }),
+	                _react2.default.createElement(
+	                    'div',
+	                    { className: 'header' },
+	                    this.state.title
+	                ),
+	                _react2.default.createElement(
+	                    'p',
+	                    null,
+	                    this.state.message
+	                )
+	            );
+	            return this.state.message ? messageHtml : null;
+	        }
+	    }]);
+
+	    return Message;
+	}(_react.Component);
+
+	exports.default = Message;
+
+/***/ },
+/* 282 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(module) {"use strict";var _typeof=typeof Symbol==="function"&&typeof Symbol.iterator==="symbol"?function(obj){return typeof obj;}:function(obj){return obj&&typeof Symbol==="function"&&obj.constructor===Symbol?"symbol":typeof obj;};/*!
