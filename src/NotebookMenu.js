@@ -19,6 +19,7 @@ import NoteList from './NoteList';
  *     }
  * ]
  * @props props.edit Function call to edit a note
+ * @props props.deleteNote Function called to delete a note
  *
  * @props state.notebookName The name of the new notebook
  * @props state.notebooks Array of notes same format as props.items
@@ -97,7 +98,8 @@ class NotebookMenu extends Component {
         return (
             <div className='notebook-menu'>
                 <div className='ui stacked header'>Notebooks</div>
-                <NoteList notebooks={this.props.items} edit={this.props.edit} />
+                <NoteList notebooks={this.props.items} edit={this.props.edit}
+                          deleteNote={this.props.deleteNote} />
                 <div className="ui horizontal divider"></div>
                 {this.state.errorTitle ? errorMsg : null}
                 <div className='ui action input' style={{width: '100%'}}>

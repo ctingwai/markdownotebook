@@ -28,7 +28,7 @@ if(notebooks == null) {
 }
 
 /**
- *
+ * Function to create a notebook and store it in the database
  * */
 function createNotebook(name) {
     notebooks.push(name);
@@ -64,6 +64,62 @@ function openNote(notebook, noteTitle) {
 }
 
 /**
+ * Handler function to delete a note from the notebook
+ * */
+function deleteNote(notebook, title) {
+    //Search for matching note in title
+    notes.forEach((el, i) => {
+        if(el.name === notebook) {
+            el.notes.forEach((el2, j) => {
+                if(el2.title === title) {
+                    notes[i].notes.splice(j, 1);
+                    localStorage.setItem(notebook, JSON.stringify(notes[i]));
+                }
+            });
+        }
+    });
+
+    notebookMenu.refresh(notes);
+}
+
+/**
+ * Create a note and save it in browser
+ * @param newData Data for creating the new note in the format:
+ * {
+ *     title: <note title>
+ *     text: <note content>
+ *     notebook: <notebook name for the new note>
+ * }
+ * */
+function createNote(newData, createdDate) {
+    let res = null;
+    notes.forEach((el, i) => {
+        if(el.name === newData.notebook) {
+            notes[i].notes.push({
+                title: newData.title,
+                text: newData.text,
+                created: createdDate ? createdDate : new Date()
+            });
+            res = notes[i];
+        }
+    });
+    localStorage.setItem(newData.notebook, JSON.stringify(res));
+    return res;
+}
+
+/**
+ * Update a note by deleting the original note and creating the new note
+ * */
+function updateNote(original, newData) {
+    let res = null;
+    notes.forEach((el, i) => {
+        deleteNote(original.notebook, original.title);
+        createNote(newData, original.created);
+    });
+    return res;
+}
+
+/**
  * Handle saving of a note, on edits, it will delete the original note and add
  * the edited note into the array, on create, it will just create a new note
  * data in the format:
@@ -80,49 +136,6 @@ function openNote(notebook, noteTitle) {
  * */
 function saveNote(data) {
     let editNote = data.edit;
-
-    function updateNote(original, newData) {
-        let res = null;
-        notes.forEach((el, i) => {
-            //Delete original note
-            if(el.name === original.notebook) {
-                el.notes.forEach((el2, j) => {
-                    if(el2.title === original.title) {
-                        notes[i].notes.splice(j, 1);
-                        localStorage.setItem(original.notebook, JSON.stringify(notes[i]));
-                    }
-                });
-            }
-            //Add new note
-            if(el.name === newData.notebook) {
-                //Add new note
-                notes[i].notes.push({
-                    title: newData.title,
-                    text: newData.text,
-                    created: original.created
-                });
-                res = notes[i];
-                localStorage.setItem(newData.notebook, JSON.stringify(res));
-            }
-        });
-        return res;
-    }
-
-    function createNote(newData) {
-        let res = null;
-        notes.forEach((el, i) => {
-            if(el.name === newData.notebook) {
-                notes[i].notes.push({
-                    title: newData.title,
-                    text: newData.text,
-                    created: new Date()
-                });
-                res = notes[i];
-            }
-        });
-        localStorage.setItem(newData.notebook, JSON.stringify(res));
-        return res;
-    }
 
     let res = null;
     if(editNote.title && editNote.notebook) {
@@ -148,6 +161,7 @@ function saveNote(data) {
 
 var notebookMenu = ReactDOM.render(<NotebookMenu items={notes}
                                                  onNotebookCreate={createNotebook}
+                                                 deleteNote={deleteNote}
                                                  edit={openNote} />, document.getElementById('nav'));
 var editor = ReactDOM.render(<Editor notebooks={notes}
                                      save={saveNote} />, document.getElementById('editor'));

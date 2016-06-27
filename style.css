@@ -14,3 +14,6 @@
 .editor-footer, .editor-menu {
     text-align: right;
 }
+.ui.styled.accordion .ui.list .content.delete-note {
+    padding: 0;
+}

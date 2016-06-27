@@ -20,6 +20,7 @@ import AccordionContent from './AccordionContent';
  *     }
  * ]
  * @props props.edit Function called when a note is clicked
+ * @props props.deleteNote Function called to delete a note
  *
  * @props state.opened Store the opened notebook
  * */
@@ -51,6 +52,7 @@ export default class NoteList extends Component {
                             <NoteLink title={note.title}
                                       edit={this.props.edit}
                                       created={note.created}
+                                      deleteNote={this.props.deleteNote}
                                       openedNotebook={this.getOpenedNotebook.bind(this)} />
                         </div>
                     );
