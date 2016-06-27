@@ -11,6 +11,11 @@ can be found [here](https://mdnotebooks.geeknomad.xyz/).
 2. Run `npm install --production`
 3. Refresh the page
 
+# TODO
+- Lock notes with encryption
+- Note export and import
+- Sync support (Google Drive, Dropbox and WebDAV)
+
 # License
 Copyright © 2016 Chong Ting Wai [ctingwai@hotmail.com](mailto:ctingwai@hotmail.com)
 This work is free. You can redistribute it and/or modify it under the terms of the
