@@ -50,13 +50,14 @@ export default class Editor extends Component {
         this.setState({preview: preview});
     }
     handleTextChange(e) {
+        this.footer.noteModified();
         this.setState({text: e.target.value});
     }
     handleTitleChange(e) {
         this.setState({title: e.target.value});
     }
     handleSave() {
-        this.props.save({
+        return this.props.save({
             title: this.state.title,
             text: this.state.text,
             notebook: this.state.notebook,
@@ -140,6 +141,7 @@ export default class Editor extends Component {
                 </div>
                 <div className='ui segment secondary'>
                     <EditorFooter saveFn={this.handleSave.bind(this)}
+                                  ref={(c) => this.footer = c}
                                   createFn={this.handleNewNote.bind(this)} />
                 </div>
             </div>

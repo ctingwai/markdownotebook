@@ -68,6 +68,7 @@ function openNote(notebook, noteTitle) {
  * Handler function to delete a note from the notebook
  * */
 function deleteNote(notebook, title) {
+    let res = false;
     //Search for matching note in title
     notes.forEach((el, i) => {
         if(el.name === notebook) {
@@ -75,12 +76,14 @@ function deleteNote(notebook, title) {
                 if(el2.title === title) {
                     notes[i].notes.splice(j, 1);
                     localStorage.setItem(notebook, JSON.stringify(notes[i]));
+                    res = true;
                 }
             });
         }
     });
 
     notebookMenu.refresh(notes);
+    return res;
 }
 
 /**
@@ -137,12 +140,12 @@ function createNote(newData, createdDate) {
  * Update a note by deleting the original note and creating the new note
  * */
 function updateNote(original, newData) {
-    let res = null;
+    let res1 = null, res2 = null;
     notes.forEach((el, i) => {
-        deleteNote(original.notebook, original.title);
-        createNote(newData, original.created);
+        res1 = deleteNote(original.notebook, original.title);
+        res2 = createNote(newData, original.created);
     });
-    return res;
+    return res1 && res2;
 }
 
 /**
@@ -183,6 +186,7 @@ function saveNote(data) {
     }
 
     notebookMenu.refresh(notes);
+    return !!res;
 }
 
 var notebookMenu = ReactDOM.render(<NotebookMenu items={notes}
