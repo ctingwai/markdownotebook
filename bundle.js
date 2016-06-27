@@ -97,7 +97,7 @@
 	}
 
 	/**
-	 *
+	 * Function to create a notebook and store it in the database
 	 * */
 	function createNotebook(name) {
 	    notebooks.push(name);
@@ -131,6 +131,62 @@
 	}
 
 	/**
+	 * Handler function to delete a note from the notebook
+	 * */
+	function deleteNote(notebook, title) {
+	    //Search for matching note in title
+	    notes.forEach(function (el, i) {
+	        if (el.name === notebook) {
+	            el.notes.forEach(function (el2, j) {
+	                if (el2.title === title) {
+	                    notes[i].notes.splice(j, 1);
+	                    localStorage.setItem(notebook, JSON.stringify(notes[i]));
+	                }
+	            });
+	        }
+	    });
+
+	    notebookMenu.refresh(notes);
+	}
+
+	/**
+	 * Create a note and save it in browser
+	 * @param newData Data for creating the new note in the format:
+	 * {
+	 *     title: <note title>
+	 *     text: <note content>
+	 *     notebook: <notebook name for the new note>
+	 * }
+	 * */
+	function createNote(newData, createdDate) {
+	    var res = null;
+	    notes.forEach(function (el, i) {
+	        if (el.name === newData.notebook) {
+	            notes[i].notes.push({
+	                title: newData.title,
+	                text: newData.text,
+	                created: createdDate ? createdDate : new Date()
+	            });
+	            res = notes[i];
+	        }
+	    });
+	    localStorage.setItem(newData.notebook, JSON.stringify(res));
+	    return res;
+	}
+
+	/**
+	 * Update a note by deleting the original note and creating the new note
+	 * */
+	function updateNote(original, newData) {
+	    var res = null;
+	    notes.forEach(function (el, i) {
+	        deleteNote(original.notebook, original.title);
+	        createNote(newData, original.created);
+	    });
+	    return res;
+	}
+
+	/**
 	 * Handle saving of a note, on edits, it will delete the original note and add
 	 * the edited note into the array, on create, it will just create a new note
 	 * data in the format:
@@ -147,49 +203,6 @@
 	 * */
 	function saveNote(data) {
 	    var editNote = data.edit;
-
-	    function updateNote(original, newData) {
-	        var res = null;
-	        notes.forEach(function (el, i) {
-	            //Delete original note
-	            if (el.name === original.notebook) {
-	                el.notes.forEach(function (el2, j) {
-	                    if (el2.title === original.title) {
-	                        notes[i].notes.splice(j, 1);
-	                        localStorage.setItem(original.notebook, JSON.stringify(notes[i]));
-	                    }
-	                });
-	            }
-	            //Add new note
-	            if (el.name === newData.notebook) {
-	                //Add new note
-	                notes[i].notes.push({
-	                    title: newData.title,
-	                    text: newData.text,
-	                    created: original.created
-	                });
-	                res = notes[i];
-	                localStorage.setItem(newData.notebook, JSON.stringify(res));
-	            }
-	        });
-	        return res;
-	    }
-
-	    function createNote(newData) {
-	        var res = null;
-	        notes.forEach(function (el, i) {
-	            if (el.name === newData.notebook) {
-	                notes[i].notes.push({
-	                    title: newData.title,
-	                    text: newData.text,
-	                    created: new Date()
-	                });
-	                res = notes[i];
-	            }
-	        });
-	        localStorage.setItem(newData.notebook, JSON.stringify(res));
-	        return res;
-	    }
 
 	    var res = null;
 	    if (editNote.title && editNote.notebook) {
@@ -215,6 +228,7 @@
 
 	var notebookMenu = _reactDom2.default.render(_react2.default.createElement(_NotebookMenu2.default, { items: notes,
 	    onNotebookCreate: createNotebook,
+	    deleteNote: deleteNote,
 	    edit: openNote }), document.getElementById('nav'));
 	var editor = _reactDom2.default.render(_react2.default.createElement(_Editor2.default, { notebooks: notes,
 	    save: saveNote }), document.getElementById('editor'));
@@ -20594,6 +20608,7 @@
 	 *     }
 	 * ]
 	 * @props props.edit Function call to edit a note
+	 * @props props.deleteNote Function called to delete a note
 	 *
 	 * @props state.notebookName The name of the new notebook
 	 * @props state.notebooks Array of notes same format as props.items
@@ -20707,7 +20722,8 @@
 	                    { className: 'ui stacked header' },
 	                    'Notebooks'
 	                ),
-	                _react2.default.createElement(_NoteList2.default, { notebooks: this.props.items, edit: this.props.edit }),
+	                _react2.default.createElement(_NoteList2.default, { notebooks: this.props.items, edit: this.props.edit,
+	                    deleteNote: this.props.deleteNote }),
 	                _react2.default.createElement('div', { className: 'ui horizontal divider' }),
 	                this.state.errorTitle ? errorMsg : null,
 	                _react2.default.createElement(
@@ -20784,6 +20800,7 @@
 	 *     }
 	 * ]
 	 * @props props.edit Function called when a note is clicked
+	 * @props props.deleteNote Function called to delete a note
 	 *
 	 * @props state.opened Store the opened notebook
 	 * */
@@ -20834,6 +20851,7 @@
 	                            _react2.default.createElement(_NoteLink2.default, { title: note.title,
 	                                edit: _this3.props.edit,
 	                                created: note.created,
+	                                deleteNote: _this3.props.deleteNote,
 	                                openedNotebook: _this3.getOpenedNotebook.bind(_this3) })
 	                        );
 	                    });
@@ -20886,6 +20904,8 @@
 	 * @props props.openedNotebook Function called when the note is clicked
 	 * @props props.title Title of the note
 	 * @props props.created Date the note is create
+	 * @props props.edit Function called when link is clicked
+	 * @props props.deleteNote Function called when delete is called
 	 * */
 
 	var NoteLink = function (_Component) {
@@ -20903,11 +20923,29 @@
 	            this.props.edit(this.props.openedNotebook(), e.target.innerHTML);
 	        }
 	    }, {
+	        key: 'handleDelete',
+	        value: function handleDelete(e) {
+	            var title = e.target.getAttribute('data-title');
+	            if (!title) title = e.target.parentNode.getAttribute('data-title');
+	            this.props.deleteNote(this.props.openedNotebook(), title);
+	        }
+	    }, {
 	        key: 'render',
 	        value: function render() {
 	            return _react2.default.createElement(
 	                'div',
 	                { className: 'item' },
+	                _react2.default.createElement(
+	                    'div',
+	                    { className: 'right floated content delete-note' },
+	                    _react2.default.createElement(
+	                        'button',
+	                        { className: 'circular ui icon button',
+	                            'data-title': this.props.title,
+	                            onClick: this.handleDelete.bind(this) },
+	                        _react2.default.createElement('i', { className: 'icon remove' })
+	                    )
+	                ),
 	                _react2.default.createElement('i', { className: 'large file middle aligned icon' }),
 	                _react2.default.createElement(
 	                    'div',

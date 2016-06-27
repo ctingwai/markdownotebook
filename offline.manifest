@@ -1,0 +1,11 @@
+CACHE MANIFEST
+style.css
+lib/semantic/dist/semantic.min.css
+node_modules/jquery/dist/jquery.min.js
+lib/semantic/dist/semantic.min.js
+https://fonts.gstatic.com/s/lato/v11/1YwB1sO8YE1Lyjf12WNiUA.woff2
+lib/semantic/dist/themes/default/assets/fonts/icons.woff2
+lib/semantic/dist/themes/default/assets/fonts/icons.woff
+lib/semantic/dist/themes/default/assets/fonts/icons.ttf
+bundle.js
+index.html
