@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import NotebookMenu from './NotebookMenu';
 import Editor from './Editor';
+import Message from './Message';
 import $ from 'jquery';
 
 var notebooks = JSON.parse(localStorage.getItem('notebooks'));
@@ -83,6 +84,26 @@ function deleteNote(notebook, title) {
 }
 
 /**
+ * Find duplicate note title
+ *
+ * @param notebook Notebook to search
+ * @param title Title of the note
+ * */
+function isUnique(notebook, title) {
+    let unique = true;
+    notes.forEach((n, i) => {
+        if(n.name === notebook) {
+            n.notes.forEach((m, j) => {
+                if(m.title === title) {
+                    unique = false;
+                }
+            })
+        }
+    });
+    return unique;
+}
+
+/**
  * Create a note and save it in browser
  * @param newData Data for creating the new note in the format:
  * {
@@ -93,6 +114,11 @@ function deleteNote(notebook, title) {
  * */
 function createNote(newData, createdDate) {
     let res = null;
+    if(!isUnique(newData.notebook, newData.title)) {
+        let msg = 'The note already exist in ' + newData.notebook + ', please choose another name for your note';
+        message.showMessage('Error Creating Note', msg, true);
+        return null;
+    }
     notes.forEach((el, i) => {
         if(el.name === newData.notebook) {
             notes[i].notes.push({
@@ -136,8 +162,8 @@ function updateNote(original, newData) {
  * */
 function saveNote(data) {
     let editNote = data.edit;
-
     let res = null;
+
     if(editNote.title && editNote.notebook) {
         res = updateNote({
             title: editNote.title,
@@ -165,3 +191,4 @@ var notebookMenu = ReactDOM.render(<NotebookMenu items={notes}
                                                  edit={openNote} />, document.getElementById('nav'));
 var editor = ReactDOM.render(<Editor notebooks={notes}
                                      save={saveNote} />, document.getElementById('editor'));
+var message = ReactDOM.render(<Message />, document.getElementById('message-display'));
