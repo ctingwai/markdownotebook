@@ -48,7 +48,7 @@ export default class NoteList extends Component {
             if(item.notes) {
                 notes = item.notes.map((note) => {
                     return (
-                        <div className='ui list animated divided'>
+                        <div className='ui list animated divided' key={note.title}>
                             <NoteLink title={note.title}
                                       edit={this.props.edit}
                                       created={note.created}
@@ -57,8 +57,8 @@ export default class NoteList extends Component {
                         </div>
                     );
                 });
-                notebooks.push((<AccordionTitle title={item.name} id={item.name} />));
-                notebooks.push((<AccordionContent content={notes} id={item.name} />));
+                notebooks.push((<AccordionTitle key={item.name + '-title'} title={item.name} id={item.name} />));
+                notebooks.push((<AccordionContent key={item.name + '-content'} content={notes} id={item.name} />));
             }
         });
         return (

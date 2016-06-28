@@ -91,7 +91,7 @@ export default class Editor extends Component {
     refreshNotebooks() {
         let opts = this.props.notebooks.map((notebook) => {
             return (
-                <option value={notebook.name}>{notebook.name}</option>
+                <option key={notebook.name} value={notebook.name}>{notebook.name}</option>
             );
         });
         this.setState({
