@@ -20,3 +20,10 @@
 .ui.segment.notelist-notes {
     padding-left: 45px;
 }
+.ui.header>.icon.edit-notebook-btn {
+    font-size: initial;
+    padding: 0.5rem;
+}
+.ui.header>.icon.edit-notebook-btn > i{
+    margin-right: 0;
+}
