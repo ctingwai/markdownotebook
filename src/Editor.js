@@ -88,7 +88,7 @@ export default class Editor extends Component {
             }
         });
     }
-    componentWillMount() {
+    refreshNotebooks() {
         let opts = this.props.notebooks.map((notebook) => {
             return (
                 <option value={notebook.name}>{notebook.name}</option>
@@ -98,6 +98,9 @@ export default class Editor extends Component {
             notebookOptions: opts,
             notebook: this.props.notebooks.length > 0 ? this.props.notebooks[0].name : ''
         });
+    }
+    componentWillMount() {
+        this.refreshNotebooks();
     }
     render() {
         var textArea = (

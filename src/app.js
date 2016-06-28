@@ -37,6 +37,7 @@ function createNotebook(name) {
     let note = {name: name, notes: []};
     notes.push(note);
     localStorage.setItem(name, JSON.stringify(note));
+    editor.refreshNotebooks();
 }
 
 /**
