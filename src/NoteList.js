@@ -1,7 +1,5 @@
 import React, {Component} from 'react';
 import NoteLink from './NoteLink';
-import AccordionTitle from './AccordionTitle';
-import AccordionContent from './AccordionContent';
 
 /**
  * Component to create a list of notes
@@ -31,15 +29,11 @@ export default class NoteList extends Component {
             opened: ''
         };
     }
-    componentDidMount() {
-        $('.ui.accordion.notebooks-accordion').accordion({
-            onOpen: () => {
-                this.setState({opened: $('.notebooks-accordion .title.active').attr('id')});
-            }
-        });
-    }
-    getOpenedNotebook() {
-        return this.state.opened;
+    handleClick(e) {
+        let notebook = e.target.getAttribute('data-notebook');
+        if(!notebook)
+            notebook = e.target.parentNode.getAttribute('data-notebook');
+        this.setState({opened: notebook == this.state.opened ? '' : notebook});
     }
     render() {
         var notes;
@@ -48,21 +42,36 @@ export default class NoteList extends Component {
             if(item.notes) {
                 notes = item.notes.map((note) => {
                     return (
-                        <div className='ui list animated divided' key={note.title}>
-                            <NoteLink title={note.title}
-                                      edit={this.props.edit}
-                                      created={note.created}
-                                      deleteNote={this.props.deleteNote}
-                                      openedNotebook={this.getOpenedNotebook.bind(this)} />
-                        </div>
+                        <NoteLink title={note.title}
+                                  key={note.title}
+                                  edit={this.props.edit}
+                                  created={note.created}
+                                  deleteNote={this.props.deleteNote}
+                                  notebook={item.name} />
                     );
                 });
-                notebooks.push((<AccordionTitle key={item.name + '-title'} title={item.name} id={item.name} />));
-                notebooks.push((<AccordionContent key={item.name + '-content'} content={notes} id={item.name} />));
+                notebooks.push(
+                    <h3 className='ui attached header notelist-header'>
+                        <span data-notebook={item.name} onClick={this.handleClick.bind(this)}>
+                            <i className={(item.name == this.state.opened) ? 'icon caret down' : 'icon caret right'} />
+                            {item.name}
+                        </span>
+                    </h3>
+                );
+                let notelist = (
+                    <div className={'ui attached segment notelist-notes'}>
+                        <div className='ui list animated divided'>
+                            {notes}
+                        </div>
+                    </div>
+                );
+                if(this.state.opened == item.name) {
+                    notebooks.push(notelist);
+                }
             }
         });
         return (
-            <div className='ui styled fluid accordion notebooks-accordion'>
+            <div className='ui segments notebooks-accordion'>
                 {notebooks}
             </div>
         );

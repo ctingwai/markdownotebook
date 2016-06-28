@@ -5,7 +5,7 @@ var moment = require('moment');
 /**
  * Component to create anchor link to note
  *
- * @props props.openedNotebook Function called when the note is clicked
+ * @props props.notebook The notebook for the note
  * @props props.title Title of the note
  * @props props.created Date the note is create
  * @props props.edit Function called when link is clicked
@@ -13,13 +13,16 @@ var moment = require('moment');
  * */
 export default class NoteLink extends Component {
     handleClick(e) {
-        this.props.edit(this.props.openedNotebook(), e.target.innerHTML);
+        this.props.edit(e.target.getAttribute('data-notebook'), e.target.getAttribute('data-title'));
     }
     handleDelete(e) {
         let title = e.target.getAttribute('data-title');
         if(!title)
             title = e.target.parentNode.getAttribute('data-title');
-        this.props.deleteNote(this.props.openedNotebook(), title);
+        let notebook = e.target.getAttribute('data-notebook');
+        if(!notebook)
+            notebook = e.target.parentNode.getAttribute('data-notebook');
+        this.props.deleteNote(notebook, title);
     }
     render() {
         return (
@@ -27,13 +30,16 @@ export default class NoteLink extends Component {
                 <div className='right floated content delete-note'>
                     <button className="circular ui icon button"
                             data-title={this.props.title}
+                            data-notebook={this.props.notebook}
                             onClick={this.handleDelete.bind(this)}>
                         <i className="icon remove"></i>
                     </button>
                 </div>
                 <i className="large file middle aligned icon"></i>
                 <div className='content'>
-                    <a className='header' onClick={this.handleClick.bind(this)}>{this.props.title}</a>
+                    <a className='header' onClick={this.handleClick.bind(this)}
+                            data-title={this.props.title}
+                            data-notebook={this.props.notebook}>{this.props.title}</a>
                     <div className='description'>
                         Created {moment(this.props.created).fromNow()}
                     </div>
