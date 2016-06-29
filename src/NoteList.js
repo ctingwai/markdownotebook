@@ -19,6 +19,8 @@ import NoteLink from './NoteLink';
  * ]
  * @props props.edit Function called when a note is clicked
  * @props props.deleteNote Function called to delete a note
+ * @props props.deleteNotebook Callback when the delete notebook button is clicked
+ * @props props.editNotebook Callback when edit notebook button is clicked
  *
  * @props state.opened Store the opened notebook
  * */
@@ -30,27 +32,39 @@ export default class NoteList extends Component {
             hovered: ''
         };
     }
+
     handleClick(e) {
         let notebook = e.target.getAttribute('data-notebook');
         if(!notebook)
             notebook = e.target.parentNode.getAttribute('data-notebook');
         this.setState({opened: notebook == this.state.opened ? '' : notebook});
     }
+
     showAdditionalControls(e) {
         let notebook = e.target.getAttribute('data-notebook');
         if(!notebook)
             notebook = e.target.parentNode.getAttribute('data-notebook');
         this.setState({hovered: notebook});
     }
+
     hideAdditionalControls(e) {
         this.setState({hovered: ''});
     }
+
     editNotebook(e) {
-        //TODO edit notebook
+        let notebook = e.target.getAttribute('data-notebook');
+        if(!notebook)
+            notebook = e.target.parentNode.getAttribute('data-notebook');
+        this.props.editNotebook(notebook);
     }
+
     deleteNotebook(e) {
-        //TODO delete notebook
+        let notebook = e.target.getAttribute('data-notebook');
+        if(!notebook)
+            notebook = e.target.parentNode.getAttribute('data-notebook');
+        this.props.deleteNotebook(notebook);
     }
+
     render() {
         var notes;
         var notebooks = [];
@@ -68,12 +82,14 @@ export default class NoteList extends Component {
                 });
                 let buttonRm = (
                     <button className='ui negative icon basic button right floated edit-notebook-btn'
+                            data-notebook={item.name}
                             onClick={this.deleteNotebook.bind(this)}>
                         <i className='icon remove' />
                     </button>
                 );
                 let buttonEdit = (
                     <button className='ui teal icon basic button right floated edit-notebook-btn'
+                            data-notebook={item.name}
                             onClick={this.editNotebook.bind(this)}>
                         <i className='icon write' />
                     </button>
