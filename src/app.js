@@ -124,7 +124,7 @@ function isUnique(notebook, title) {
  * }
  * */
 function createNote(newData, createdDate) {
-    let res = null;
+    let res = null, index;
     if(!newData.title) {
         let msg = 'Note title cannot be empty';
         message.showMessage('Error Creating Note', msg, true);
@@ -137,15 +137,16 @@ function createNote(newData, createdDate) {
     }
     notes.forEach((el, i) => {
         if(el.name === newData.notebook) {
-            notes[i].notes.push({
+            res = {
                 title: newData.title,
                 text: newData.text,
                 created: createdDate ? createdDate : new Date()
-            });
-            res = notes[i];
+            };
+            notes[i].notes.push(res);
+            index = i;
         }
     });
-    localStorage.setItem(newData.notebook, JSON.stringify(res));
+    localStorage.setItem(newData.notebook, JSON.stringify(notes[index]));
     return res;
 }
 
@@ -158,7 +159,7 @@ function updateNote(original, newData) {
         res1 = deleteNote(original.notebook, original.title);
         res2 = createNote(newData, original.created);
     });
-    return res1 && res2;
+    return res2;
 }
 
 /**
@@ -199,7 +200,7 @@ function saveNote(data) {
     }
 
     notebookMenu.refresh(notes);
-    return !!res;
+    return res;
 }
 
 /**

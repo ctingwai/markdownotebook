@@ -54,15 +54,29 @@ export default class Editor extends Component {
         this.setState({text: e.target.value});
     }
     handleTitleChange(e) {
+        this.footer.noteModified();
         this.setState({title: e.target.value});
     }
     handleSave() {
-        return this.props.save({
+        let res = this.props.save({
             title: this.state.title,
             text: this.state.text,
             notebook: this.state.notebook,
             edit: this.state.edit
         });
+        if(res && this.state.edit.notebook == null) {
+            this.setState({
+                title: this.state.title,
+                text: this.state.text,
+                notebook: this.state.notebook,
+                edit: {
+                    notebook: this.state.notebook,
+                    title: res.title,
+                    created: res.created
+                }
+            });
+        }
+        return res;
     }
     handleNewNote() {
         this.setState({
