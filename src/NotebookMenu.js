@@ -27,10 +27,12 @@ import ModalForm from './ModalForm';
  * ]
  * @props props.edit Function call to edit a note
  * @props props.deleteNote Function called to delete a note
+ *
  * @props state.notebookName The name of the new notebook
  * @props state.notebooks Array of notes same format as props.items
  * @props state.errorTitle Store the title of the error message
  * @props state.errorMessage Store the error message
+ * @props state.createNotebook Store the current state of notebook creation
  *
  * @function refresh Method called to refresh the notebooks when it is edited
  * */
@@ -38,6 +40,7 @@ export default class NotebookMenu extends Component {
     constructor() {
         super();
         this.state = {
+            createNotebook: '',
             notebookName: '',
             notebooks: [],
             errorTitle: '',
@@ -98,18 +101,22 @@ export default class NotebookMenu extends Component {
     createNotebook(e) {
         this.setState({
             errorTitle: '',
-            errorMessage: ''
+            errorMessage: '',
+            createNotebook: 'creating'
         });
         if(this.validateNotebook()) {
             if(this.props.onNotebookCreate(this.state.notebookName)) {
                 let notebooks = this.state.notebooks;
                 notebooks.push({name: this.state.notebookName, notes: []});
-                this.setState({notebooks: notebooks, notebookName: ''});
+                this.setState({notebooks: notebooks, notebookName: '', createNotebook: 'created'});
             }
         }
     }
 
     handleKeyUp(e) {
+        if(this.state.createNotebook == 'created') {
+            this.setState({createNotebook: ''});
+        }
         this.setState({notebookName: e.target.value});
     }
 
@@ -211,6 +218,16 @@ export default class NotebookMenu extends Component {
                 <p>{this.state.errorMessage}</p>
             </div>
         );
+        let createNbBtn = 'ui labeled icon button primary';
+        let createNbIcon = 'icon book';
+        let createNbText = 'Create Notebook';
+        if(this.state.createNotebook == 'creating') {
+            createNbBtn = 'ui labeled icon button secondary loading';
+        } else if(this.state.createNotebook == 'created') {
+            createNbBtn = 'ui labeled icon button secondary positive labeled icon';
+            createNbIcon = 'icon checkmark';
+            createNbText = 'Notebook Created';
+        }
         return (
             <div className='notebook-menu'>
                 <div className='ui stacked header'>Notebooks</div>
@@ -222,9 +239,12 @@ export default class NotebookMenu extends Component {
                 {this.state.errorTitle ? errorMsg : null}
                 <div className='ui action input' style={{width: '100%'}}>
                     <input type='text' placeholder='Enter notebook name'
-                           onKeyUp={this.handleKeyUp.bind(this)} />
-                    <a className='ui button'
-                       onClick={this.createNotebook.bind(this)}>Create Notebook</a>
+                           value={this.state.notebookName}
+                           onKeyUp={this.handleKeyUp.bind(this)}
+                           onChange={this.handleKeyUp.bind(this)} />
+                    <a className={createNbBtn}
+                       onClick={this.createNotebook.bind(this)}>
+                       <i className={createNbIcon} /> CreateNbText</a>
                 </div>
                 <ConfirmationModal header={this.state.confirmation.header}
                                    show={this.state.confirmation.show}

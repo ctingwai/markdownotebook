@@ -49,10 +49,10 @@ export default class EditorFooter extends Component {
 
         return (
             <div className='editor-footer'>
-                <button className='ui button labeled icon' onClick={this.handleCreate.bind(this)}>
+                <button className='ui button labeled secondary basic icon' onClick={this.handleCreate.bind(this)}>
                     <i className='icon add square'></i> New Note
                 </button>
-                <button className={'ui button labeled icon ' + buttonHint} onClick={this.handleSave.bind(this)}>
+                <button className={'ui button labeled primary basic icon ' + buttonHint} onClick={this.handleSave.bind(this)}>
                     <i className={saveIcon}></i>{saveText}
                 </button>
             </div>

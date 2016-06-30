@@ -45,6 +45,7 @@ function createNotebook(name) {
     notes.push(note);
     localStorage.setItem(name, JSON.stringify(note));
     editor.refreshNotebooks();
+    return true;
 }
 
 /**
