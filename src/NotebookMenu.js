@@ -7,6 +7,11 @@ import ModalForm from './ModalForm';
  * Component to create a notebook menu
  *
  * @props props.onNotebookCreate Function called to create a new notebook
+ * @props props.onNotebookEdit Function called to edit a notebook
+ *                           arg1: current notebook name,
+ *                           arg2: new notebook name
+ * @props props.onNotebookDelete Function called to delete an entire notebook,
+ *                             arg1: notebook
  * @props props.items Array of notes in the following format:
  * [
  *     {
@@ -22,9 +27,6 @@ import ModalForm from './ModalForm';
  * ]
  * @props props.edit Function call to edit a note
  * @props props.deleteNote Function called to delete a note
- * @props props.deleteNotebook Function called to delete an entire notebook
- * @props props.editNotebook Function called to edit a notebook
- *
  * @props state.notebookName The name of the new notebook
  * @props state.notebooks Array of notes same format as props.items
  * @props state.errorTitle Store the title of the error message
@@ -116,12 +118,16 @@ export default class NotebookMenu extends Component {
     }
 
     handleNotebookDelete() {
-        //TODO Add delete function
+        let notebook = this.state.confirmation.id;
+        this.setState({notebooks: this.props.onNotebookDelete(notebook)});
+        this.clearConfirmation();
     }
 
     handleNotebookEdit() {
-        //TODO add edit function
-        console.log('Original: ' + this.state.edit.original + ', New: ' + this.state.edit.newName);
+        let original = this.state.edit.original,
+            newName = this.state.edit.newName;
+        this.setState({notebooks: this.props.onNotebookEdit(original, newName)});
+        this.clearEditForm();
     }
 
     clearConfirmation() {
@@ -155,6 +161,7 @@ export default class NotebookMenu extends Component {
     }
 
     updateNotebookFormState(e) {
+        console.log(e.target.value);
         this.setState({
             edit: {
                 show: this.state.edit.show,
@@ -177,7 +184,7 @@ export default class NotebookMenu extends Component {
                     <div className='ui form' key='modal-form-input'>
                         <div className='field'>
                             <label>New Notebook Name</label>
-                            <input type='text' value={notebook} onChange={this.updateNotebookFormState.bind(this)} />
+                            <input type='text' defaultValue={notebook} onChange={this.updateNotebookFormState.bind(this)} />
                         </div>
                     </div>
                 ]
@@ -207,7 +214,7 @@ export default class NotebookMenu extends Component {
         return (
             <div className='notebook-menu'>
                 <div className='ui stacked header'>Notebooks</div>
-                <NoteList notebooks={this.props.items} edit={this.props.edit}
+                <NoteList notebooks={this.state.notebooks} edit={this.props.edit}
                           deleteNotebook={this.confirmNotebookDelete.bind(this)}
                           editNotebook={this.showEditNotebookForm.bind(this)}
                           deleteNote={this.props.deleteNote} />

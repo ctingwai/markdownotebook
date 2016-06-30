@@ -5,27 +5,34 @@ import Editor from './Editor';
 import Message from './Message';
 import $ from 'jquery';
 
-var notebooks = JSON.parse(localStorage.getItem('notebooks'));
-var notes = [];
-if(notebooks == null) {
-    notebooks = ['Default'];
-    let defNotes = {
-        name: 'Default',
-        notes: [
-            {
-                title: 'Markdown Syntax',
-                created: new Date(),
-                text: '## Markdown Syntax'
-            }
-        ]
-    };
-    notes.push(defNotes);
-    localStorage.setItem('notebooks', JSON.stringify(notebooks));
-    localStorage.setItem('Default', JSON.stringify(defNotes));
-} else {
-    notebooks.forEach((notebook) => {
-        notes.push(JSON.parse(localStorage.getItem(notebook)));
-    });
+var notebooks, notes;
+
+/**
+ * Initialize notebooks and its notes
+ * */
+function initNotebooks() {
+    notes = [];
+    notebooks = JSON.parse(localStorage.getItem('notebooks'));
+    if(notebooks == null) {
+        notebooks = ['Default'];
+        let defNotes = {
+            name: 'Default',
+            notes: [
+                {
+                    title: 'Markdown Syntax',
+                    created: new Date(),
+                    text: '## Markdown Syntax'
+                }
+            ]
+        };
+        notes.push(defNotes);
+        localStorage.setItem('notebooks', JSON.stringify(notebooks));
+        localStorage.setItem('Default', JSON.stringify(defNotes));
+    } else {
+        notebooks.forEach((notebook) => {
+            notes.push(JSON.parse(localStorage.getItem(notebook)));
+        });
+    }
 }
 
 /**
@@ -195,8 +202,45 @@ function saveNote(data) {
     return !!res;
 }
 
+/**
+ * Handle deletion of an entire notebook
+ *
+ * @param notebook Notebook to delete
+ * */
+function deleteNotebook(notebook) {
+    notebooks.splice(notebooks.indexOf(notebook), 1);
+    localStorage.setItem('notebooks', JSON.stringify(notebooks));
+    localStorage.removeItem(notebook);
+    initNotebooks();
+    return notes;
+}
+
+/**
+ * Handle renaming of a notebook
+ *
+ * @param from Notebook to rename
+ * @param to New notebook name
+ * */
+function renameNotebook(from, to) {
+    notebooks[notebooks.indexOf(from)] = to;
+    localStorage.setItem('notebooks', JSON.stringify(notebooks));
+
+    let newNotebook = {
+        name: to,
+        notes: JSON.parse(localStorage.getItem(from)).notes
+    }
+    localStorage.removeItem(from);
+    localStorage.setItem(to, JSON.stringify(newNotebook));
+
+    initNotebooks();
+    return notes;
+}
+
+initNotebooks();
 var notebookMenu = ReactDOM.render(<NotebookMenu items={notes}
                                                  onNotebookCreate={createNotebook}
+                                                 onNotebookEdit={renameNotebook}
+                                                 onNotebookDelete={deleteNotebook}
                                                  deleteNote={deleteNote}
                                                  edit={openNote} />, document.getElementById('nav'));
 var editor = ReactDOM.render(<Editor notebooks={notes}
