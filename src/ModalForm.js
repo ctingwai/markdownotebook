@@ -12,14 +12,23 @@ import React, {Component} from 'react';
  * @props
  * */
 export default class ModalForm extends Component {
+    constructor() {
+        super();
+    }
+
     handleSubmit() {
         this.props.submit();
     }
 
 	componentDidUpdate() {
-        $('#modal-form').modal();
+        $('#modal-form').modal({
+            detachable: false,
+            onHidden: () => {
+                this.props.hidden();
+            }
+        });
         if(this.props.show) {
-            $('#modal-form').modal('show')
+            $('#modal-form.modal').modal('show');
         }
     }
 

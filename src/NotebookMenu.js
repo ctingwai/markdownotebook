@@ -51,7 +51,9 @@ export default class NotebookMenu extends Component {
             edit: {
                 original: null,
                 newName: null,
-                show: false
+                show: false,
+                header: null,
+                inputs: []
             }
         };
     }
@@ -183,6 +185,18 @@ export default class NotebookMenu extends Component {
         });
     }
 
+    clearEditForm() {
+        this.setState({
+            edit: {
+                original: null,
+                newName: null,
+                show: false,
+                header: null,
+                inputs: []
+            }
+        });
+    }
+
     render() {
         let errorMsg = (
             <div className="ui error message">
@@ -207,12 +221,14 @@ export default class NotebookMenu extends Component {
                 </div>
                 <ConfirmationModal header={this.state.confirmation.header}
                                    show={this.state.confirmation.show}
+                                   hidden={this.clearConfirmation.bind(this)}
                                    icon={this.state.confirmation.icon}
                                    description={this.state.confirmation.description}
                                    onConfirm={this.state.confirmation.onConfirm}
                                    onCancel={this.state.confirmation.onCancel} />
                 <ModalForm header={this.state.edit.header}
                            show={this.state.edit.show}
+                           hidden={this.clearEditForm.bind(this)}
                            inputs={this.state.edit.inputs}
                            submit={this.handleNotebookEdit.bind(this)} />
             </div>

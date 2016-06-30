@@ -13,22 +13,34 @@ import React, {Component} from 'react';
 export default class ConfirmationModal extends Component {
     constructor() {
         super();
+        this.state = {
+            show: false
+        };
     }
+
     handleYes(e) {
         this.props.onConfirm();
     }
+
     handleNo(e) {
         this.props.onCancel();
     }
+
 	componentDidUpdate() {
-        $('#confirmation-modal').modal();
+        $('#confirmation-modal').modal({
+            onHidden: () => {
+                this.props.hidden();
+            },
+            detachable: false
+        });
         if(this.props.show) {
-            $('#confirmation-modal').modal('show')
+            $('#confirmation-modal').modal('show');
         }
     }
+
     render() {
         return (
-            <div className='ui basic modal' id='confirmation-modal'>
+            <div className='ui basic modal' id='confirmation-modal' ref='confirmation_modal'>
                 <i className='close icon'></i>
                 <div className='header'>{this.props.header}</div>
                 <div className='image content'>
