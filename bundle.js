@@ -79,25 +79,32 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var notebooks = JSON.parse(localStorage.getItem('notebooks'));
-	var notes = [];
-	if (notebooks == null) {
-	    notebooks = ['Default'];
-	    var defNotes = {
-	        name: 'Default',
-	        notes: [{
-	            title: 'Markdown Syntax',
-	            created: new Date(),
-	            text: '## Markdown Syntax'
-	        }]
-	    };
-	    notes.push(defNotes);
-	    localStorage.setItem('notebooks', JSON.stringify(notebooks));
-	    localStorage.setItem('Default', JSON.stringify(defNotes));
-	} else {
-	    notebooks.forEach(function (notebook) {
-	        notes.push(JSON.parse(localStorage.getItem(notebook)));
-	    });
+	var notebooks, notes;
+
+	/**
+	 * Initialize notebooks and its notes
+	 * */
+	function initNotebooks() {
+	    notes = [];
+	    notebooks = JSON.parse(localStorage.getItem('notebooks'));
+	    if (notebooks == null) {
+	        notebooks = ['Default'];
+	        var defNotes = {
+	            name: 'Default',
+	            notes: [{
+	                title: 'Markdown Syntax',
+	                created: new Date(),
+	                text: '## Markdown Syntax'
+	            }]
+	        };
+	        notes.push(defNotes);
+	        localStorage.setItem('notebooks', JSON.stringify(notebooks));
+	        localStorage.setItem('Default', JSON.stringify(defNotes));
+	    } else {
+	        notebooks.forEach(function (notebook) {
+	            notes.push(JSON.parse(localStorage.getItem(notebook)));
+	        });
+	    }
 	}
 
 	/**
@@ -109,6 +116,8 @@
 	    var note = { name: name, notes: [] };
 	    notes.push(note);
 	    localStorage.setItem(name, JSON.stringify(note));
+	    editor.refreshNotebooks();
+	    return true;
 	}
 
 	/**
@@ -186,7 +195,8 @@
 	 * }
 	 * */
 	function createNote(newData, createdDate) {
-	    var res = null;
+	    var res = null,
+	        index = void 0;
 	    if (!newData.title) {
 	        var msg = 'Note title cannot be empty';
 	        message.showMessage('Error Creating Note', msg, true);
@@ -199,15 +209,16 @@
 	    }
 	    notes.forEach(function (el, i) {
 	        if (el.name === newData.notebook) {
-	            notes[i].notes.push({
+	            res = {
 	                title: newData.title,
 	                text: newData.text,
 	                created: createdDate ? createdDate : new Date()
-	            });
-	            res = notes[i];
+	            };
+	            notes[i].notes.push(res);
+	            index = i;
 	        }
 	    });
-	    localStorage.setItem(newData.notebook, JSON.stringify(res));
+	    localStorage.setItem(newData.notebook, JSON.stringify(notes[index]));
 	    return res;
 	}
 
@@ -221,7 +232,7 @@
 	        res1 = deleteNote(original.notebook, original.title);
 	        res2 = createNote(newData, original.created);
 	    });
-	    return res1 && res2;
+	    return res2;
 	}
 
 	/**
@@ -262,11 +273,48 @@
 	    }
 
 	    notebookMenu.refresh(notes);
-	    return !!res;
+	    return res;
 	}
 
+	/**
+	 * Handle deletion of an entire notebook
+	 *
+	 * @param notebook Notebook to delete
+	 * */
+	function deleteNotebook(notebook) {
+	    notebooks.splice(notebooks.indexOf(notebook), 1);
+	    localStorage.setItem('notebooks', JSON.stringify(notebooks));
+	    localStorage.removeItem(notebook);
+	    initNotebooks();
+	    return notes;
+	}
+
+	/**
+	 * Handle renaming of a notebook
+	 *
+	 * @param from Notebook to rename
+	 * @param to New notebook name
+	 * */
+	function renameNotebook(from, to) {
+	    notebooks[notebooks.indexOf(from)] = to;
+	    localStorage.setItem('notebooks', JSON.stringify(notebooks));
+
+	    var newNotebook = {
+	        name: to,
+	        notes: JSON.parse(localStorage.getItem(from)).notes
+	    };
+	    localStorage.removeItem(from);
+	    localStorage.setItem(to, JSON.stringify(newNotebook));
+
+	    initNotebooks();
+	    return notes;
+	}
+
+	initNotebooks();
 	var notebookMenu = _reactDom2.default.render(_react2.default.createElement(_NotebookMenu2.default, { items: notes,
 	    onNotebookCreate: createNotebook,
+	    onNotebookEdit: renameNotebook,
+	    onNotebookDelete: deleteNotebook,
 	    deleteNote: deleteNote,
 	    edit: openNote }), document.getElementById('nav'));
 	var editor = _reactDom2.default.render(_react2.default.createElement(_Editor2.default, { notebooks: notes,
@@ -20622,6 +20670,14 @@
 
 	var _NoteList2 = _interopRequireDefault(_NoteList);
 
+	var _ConfirmationModal = __webpack_require__(275);
+
+	var _ConfirmationModal2 = _interopRequireDefault(_ConfirmationModal);
+
+	var _ModalForm = __webpack_require__(276);
+
+	var _ModalForm2 = _interopRequireDefault(_ModalForm);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -20634,6 +20690,11 @@
 	 * Component to create a notebook menu
 	 *
 	 * @props props.onNotebookCreate Function called to create a new notebook
+	 * @props props.onNotebookEdit Function called to edit a notebook
+	 *                           arg1: current notebook name,
+	 *                           arg2: new notebook name
+	 * @props props.onNotebookDelete Function called to delete an entire notebook,
+	 *                             arg1: notebook
 	 * @props props.items Array of notes in the following format:
 	 * [
 	 *     {
@@ -20654,6 +20715,9 @@
 	 * @props state.notebooks Array of notes same format as props.items
 	 * @props state.errorTitle Store the title of the error message
 	 * @props state.errorMessage Store the error message
+	 * @props state.createNotebook Store the current state of notebook creation
+	 *
+	 * @function refresh Method called to refresh the notebooks when it is edited
 	 * */
 
 	var NotebookMenu = function (_Component) {
@@ -20665,10 +20729,26 @@
 	        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(NotebookMenu).call(this));
 
 	        _this.state = {
+	            createNotebook: '',
 	            notebookName: '',
 	            notebooks: [],
 	            errorTitle: '',
-	            errorMessage: ''
+	            errorMessage: '',
+	            confirmation: {
+	                show: false,
+	                header: '',
+	                icon: '',
+	                description: '',
+	                onConfirm: null,
+	                onCancel: null
+	            },
+	            edit: {
+	                original: null,
+	                newName: null,
+	                show: false,
+	                header: null,
+	                inputs: []
+	            }
 	        };
 	        return _this;
 	    }
@@ -20717,25 +20797,128 @@
 	        value: function createNotebook(e) {
 	            this.setState({
 	                errorTitle: '',
-	                errorMessage: ''
+	                errorMessage: '',
+	                createNotebook: 'creating'
 	            });
 	            if (this.validateNotebook()) {
 	                if (this.props.onNotebookCreate(this.state.notebookName)) {
 	                    var notebooks = this.state.notebooks;
 	                    notebooks.push({ name: this.state.notebookName, notes: [] });
-	                    this.setState({ notebooks: notebooks, notebookName: '' });
+	                    this.setState({ notebooks: notebooks, notebookName: '', createNotebook: 'created' });
 	                }
 	            }
 	        }
 	    }, {
 	        key: 'handleKeyUp',
 	        value: function handleKeyUp(e) {
+	            if (this.state.createNotebook == 'created') {
+	                this.setState({ createNotebook: '' });
+	            }
 	            this.setState({ notebookName: e.target.value });
 	        }
 	    }, {
 	        key: 'refresh',
 	        value: function refresh(newNotebooks) {
 	            this.setState({ notebooks: newNotebooks });
+	        }
+	    }, {
+	        key: 'handleNotebookDelete',
+	        value: function handleNotebookDelete() {
+	            var notebook = this.state.confirmation.id;
+	            this.setState({ notebooks: this.props.onNotebookDelete(notebook) });
+	            this.clearConfirmation();
+	        }
+	    }, {
+	        key: 'handleNotebookEdit',
+	        value: function handleNotebookEdit() {
+	            var original = this.state.edit.original,
+	                newName = this.state.edit.newName;
+	            this.setState({ notebooks: this.props.onNotebookEdit(original, newName) });
+	            this.clearEditForm();
+	        }
+	    }, {
+	        key: 'clearConfirmation',
+	        value: function clearConfirmation() {
+	            this.setState({
+	                confirmation: {
+	                    id: null,
+	                    show: false,
+	                    header: '',
+	                    icon: '',
+	                    description: '',
+	                    onConfirm: null,
+	                    onCancel: null
+	                }
+	            });
+	        }
+	    }, {
+	        key: 'confirmNotebookDelete',
+	        value: function confirmNotebookDelete(notebook) {
+	            var desc = 'All notes contained within the notebook, ' + notebook + ', will be removed. ' + 'Are your sure you want to delete this notebook?';
+	            this.setState({
+	                confirmation: {
+	                    id: notebook,
+	                    header: 'Are you sure you want to remove ' + notebook + '?',
+	                    show: true,
+	                    icon: 'icon warning sign',
+	                    description: desc,
+	                    onConfirm: this.handleNotebookDelete.bind(this),
+	                    onCancel: this.clearConfirmation.bind(this)
+	                }
+	            });
+	        }
+	    }, {
+	        key: 'updateNotebookFormState',
+	        value: function updateNotebookFormState(e) {
+	            console.log(e.target.value);
+	            this.setState({
+	                edit: {
+	                    show: this.state.edit.show,
+	                    header: this.state.edit.header,
+	                    original: this.state.edit.original,
+	                    newName: e.target.value,
+	                    inputs: this.state.edit.inputs
+	                }
+	            });
+	        }
+	    }, {
+	        key: 'showEditNotebookForm',
+	        value: function showEditNotebookForm(notebook) {
+	            this.setState({
+	                edit: {
+	                    show: true,
+	                    header: 'Edit Notebook',
+	                    original: notebook,
+	                    newName: notebook,
+	                    inputs: [_react2.default.createElement(
+	                        'div',
+	                        { className: 'ui form', key: 'modal-form-input' },
+	                        _react2.default.createElement(
+	                            'div',
+	                            { className: 'field' },
+	                            _react2.default.createElement(
+	                                'label',
+	                                null,
+	                                'New Notebook Name'
+	                            ),
+	                            _react2.default.createElement('input', { type: 'text', defaultValue: notebook, onChange: this.updateNotebookFormState.bind(this) })
+	                        )
+	                    )]
+	                }
+	            });
+	        }
+	    }, {
+	        key: 'clearEditForm',
+	        value: function clearEditForm() {
+	            this.setState({
+	                edit: {
+	                    original: null,
+	                    newName: null,
+	                    show: false,
+	                    header: null,
+	                    inputs: []
+	                }
+	            });
 	        }
 	    }, {
 	        key: 'render',
@@ -20754,6 +20937,16 @@
 	                    this.state.errorMessage
 	                )
 	            );
+	            var createNbBtn = 'ui labeled icon button primary';
+	            var createNbIcon = 'icon book';
+	            var createNbText = 'Create Notebook';
+	            if (this.state.createNotebook == 'creating') {
+	                createNbBtn = 'ui labeled icon button secondary loading';
+	            } else if (this.state.createNotebook == 'created') {
+	                createNbBtn = 'ui labeled icon button secondary positive labeled icon';
+	                createNbIcon = 'icon checkmark';
+	                createNbText = 'Notebook Created';
+	            }
 	            return _react2.default.createElement(
 	                'div',
 	                { className: 'notebook-menu' },
@@ -20762,7 +20955,9 @@
 	                    { className: 'ui stacked header' },
 	                    'Notebooks'
 	                ),
-	                _react2.default.createElement(_NoteList2.default, { notebooks: this.props.items, edit: this.props.edit,
+	                _react2.default.createElement(_NoteList2.default, { notebooks: this.state.notebooks, edit: this.props.edit,
+	                    deleteNotebook: this.confirmNotebookDelete.bind(this),
+	                    editNotebook: this.showEditNotebookForm.bind(this),
 	                    deleteNote: this.props.deleteNote }),
 	                _react2.default.createElement('div', { className: 'ui horizontal divider' }),
 	                this.state.errorTitle ? errorMsg : null,
@@ -20770,14 +20965,29 @@
 	                    'div',
 	                    { className: 'ui action input', style: { width: '100%' } },
 	                    _react2.default.createElement('input', { type: 'text', placeholder: 'Enter notebook name',
-	                        onKeyUp: this.handleKeyUp.bind(this) }),
+	                        value: this.state.notebookName,
+	                        onKeyUp: this.handleKeyUp.bind(this),
+	                        onChange: this.handleKeyUp.bind(this) }),
 	                    _react2.default.createElement(
 	                        'a',
-	                        { className: 'ui button',
+	                        { className: createNbBtn,
 	                            onClick: this.createNotebook.bind(this) },
-	                        'Create Notebook'
+	                        _react2.default.createElement('i', { className: createNbIcon }),
+	                        ' CreateNbText'
 	                    )
-	                )
+	                ),
+	                _react2.default.createElement(_ConfirmationModal2.default, { header: this.state.confirmation.header,
+	                    show: this.state.confirmation.show,
+	                    hidden: this.clearConfirmation.bind(this),
+	                    icon: this.state.confirmation.icon,
+	                    description: this.state.confirmation.description,
+	                    onConfirm: this.state.confirmation.onConfirm,
+	                    onCancel: this.state.confirmation.onCancel }),
+	                _react2.default.createElement(_ModalForm2.default, { header: this.state.edit.header,
+	                    show: this.state.edit.show,
+	                    hidden: this.clearEditForm.bind(this),
+	                    inputs: this.state.edit.inputs,
+	                    submit: this.handleNotebookEdit.bind(this) })
 	            );
 	        }
 	    }]);
@@ -20807,14 +21017,6 @@
 
 	var _NoteLink2 = _interopRequireDefault(_NoteLink);
 
-	var _AccordionTitle = __webpack_require__(275);
-
-	var _AccordionTitle2 = _interopRequireDefault(_AccordionTitle);
-
-	var _AccordionContent = __webpack_require__(276);
-
-	var _AccordionContent2 = _interopRequireDefault(_AccordionContent);
-
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -20841,6 +21043,8 @@
 	 * ]
 	 * @props props.edit Function called when a note is clicked
 	 * @props props.deleteNote Function called to delete a note
+	 * @props props.deleteNotebook Callback when the delete notebook button is clicked
+	 * @props props.editNotebook Callback when edit notebook button is clicked
 	 *
 	 * @props state.opened Store the opened notebook
 	 * */
@@ -20854,54 +21058,108 @@
 	        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(NoteList).call(this));
 
 	        _this.state = {
-	            opened: ''
+	            opened: '',
+	            hovered: ''
 	        };
 	        return _this;
 	    }
 
 	    _createClass(NoteList, [{
-	        key: 'componentDidMount',
-	        value: function componentDidMount() {
-	            var _this2 = this;
-
-	            $('.ui.accordion.notebooks-accordion').accordion({
-	                onOpen: function onOpen() {
-	                    _this2.setState({ opened: $('.notebooks-accordion .title.active').attr('id') });
-	                }
-	            });
+	        key: 'handleClick',
+	        value: function handleClick(e) {
+	            var notebook = e.target.getAttribute('data-notebook');
+	            if (!notebook) notebook = e.target.parentNode.getAttribute('data-notebook');
+	            this.setState({ opened: notebook == this.state.opened ? '' : notebook });
 	        }
 	    }, {
-	        key: 'getOpenedNotebook',
-	        value: function getOpenedNotebook() {
-	            return this.state.opened;
+	        key: 'showAdditionalControls',
+	        value: function showAdditionalControls(e) {
+	            var notebook = e.target.getAttribute('data-notebook');
+	            if (!notebook) notebook = e.target.parentNode.getAttribute('data-notebook');
+	            this.setState({ hovered: notebook });
+	        }
+	    }, {
+	        key: 'hideAdditionalControls',
+	        value: function hideAdditionalControls(e) {
+	            this.setState({ hovered: '' });
+	        }
+	    }, {
+	        key: 'editNotebook',
+	        value: function editNotebook(e) {
+	            var notebook = e.target.getAttribute('data-notebook');
+	            if (!notebook) notebook = e.target.parentNode.getAttribute('data-notebook');
+	            this.props.editNotebook(notebook);
+	        }
+	    }, {
+	        key: 'deleteNotebook',
+	        value: function deleteNotebook(e) {
+	            var notebook = e.target.getAttribute('data-notebook');
+	            if (!notebook) notebook = e.target.parentNode.getAttribute('data-notebook');
+	            this.props.deleteNotebook(notebook);
 	        }
 	    }, {
 	        key: 'render',
 	        value: function render() {
-	            var _this3 = this;
+	            var _this2 = this;
 
 	            var notes;
 	            var notebooks = [];
 	            this.props.notebooks.forEach(function (item) {
 	                if (item.notes) {
 	                    notes = item.notes.map(function (note) {
-	                        return _react2.default.createElement(
+	                        return _react2.default.createElement(_NoteLink2.default, { title: note.title,
+	                            key: note.title,
+	                            edit: _this2.props.edit,
+	                            created: note.created,
+	                            deleteNote: _this2.props.deleteNote,
+	                            notebook: item.name });
+	                    });
+	                    var buttonRm = _react2.default.createElement(
+	                        'button',
+	                        { className: 'ui negative icon basic button right floated edit-notebook-btn',
+	                            'data-notebook': item.name,
+	                            onClick: _this2.deleteNotebook.bind(_this2) },
+	                        _react2.default.createElement('i', { className: 'icon remove' })
+	                    );
+	                    var buttonEdit = _react2.default.createElement(
+	                        'button',
+	                        { className: 'ui teal icon basic button right floated edit-notebook-btn',
+	                            'data-notebook': item.name,
+	                            onClick: _this2.editNotebook.bind(_this2) },
+	                        _react2.default.createElement('i', { className: 'icon write' })
+	                    );
+	                    notebooks.push(_react2.default.createElement(
+	                        'h3',
+	                        { className: 'ui attached header notelist-header', key: item.name,
+	                            'data-notebook': item.name,
+	                            onMouseLeave: _this2.hideAdditionalControls.bind(_this2),
+	                            onMouseEnter: _this2.showAdditionalControls.bind(_this2) },
+	                        _react2.default.createElement(
+	                            'span',
+	                            { 'data-notebook': item.name, onClick: _this2.handleClick.bind(_this2) },
+	                            _react2.default.createElement('i', { className: item.name == _this2.state.opened ? 'icon caret down' : 'icon caret right' }),
+	                            item.name
+	                        ),
+	                        _this2.state.hovered == item.name ? buttonRm : null,
+	                        _this2.state.hovered == item.name ? buttonEdit : null
+	                    ));
+	                    var notelist = _react2.default.createElement(
+	                        'div',
+	                        { className: 'ui attached segment notelist-notes', key: item.name + '-notes' },
+	                        _react2.default.createElement(
 	                            'div',
 	                            { className: 'ui list animated divided' },
-	                            _react2.default.createElement(_NoteLink2.default, { title: note.title,
-	                                edit: _this3.props.edit,
-	                                created: note.created,
-	                                deleteNote: _this3.props.deleteNote,
-	                                openedNotebook: _this3.getOpenedNotebook.bind(_this3) })
-	                        );
-	                    });
-	                    notebooks.push(_react2.default.createElement(_AccordionTitle2.default, { title: item.name, id: item.name }));
-	                    notebooks.push(_react2.default.createElement(_AccordionContent2.default, { content: notes, id: item.name }));
+	                            notes
+	                        )
+	                    );
+	                    if (_this2.state.opened == item.name) {
+	                        notebooks.push(notelist);
+	                    }
 	                }
 	            });
 	            return _react2.default.createElement(
 	                'div',
-	                { className: 'ui styled fluid accordion notebooks-accordion' },
+	                { className: 'ui segments notebooks-accordion' },
 	                notebooks
 	            );
 	        }
@@ -20941,7 +21199,7 @@
 	/**
 	 * Component to create anchor link to note
 	 *
-	 * @props props.openedNotebook Function called when the note is clicked
+	 * @props props.notebook The notebook for the note
 	 * @props props.title Title of the note
 	 * @props props.created Date the note is create
 	 * @props props.edit Function called when link is clicked
@@ -20960,14 +21218,16 @@
 	    _createClass(NoteLink, [{
 	        key: 'handleClick',
 	        value: function handleClick(e) {
-	            this.props.edit(this.props.openedNotebook(), e.target.innerHTML);
+	            this.props.edit(e.target.getAttribute('data-notebook'), e.target.getAttribute('data-title'));
 	        }
 	    }, {
 	        key: 'handleDelete',
 	        value: function handleDelete(e) {
 	            var title = e.target.getAttribute('data-title');
 	            if (!title) title = e.target.parentNode.getAttribute('data-title');
-	            this.props.deleteNote(this.props.openedNotebook(), title);
+	            var notebook = e.target.getAttribute('data-notebook');
+	            if (!notebook) notebook = e.target.parentNode.getAttribute('data-notebook');
+	            this.props.deleteNote(notebook, title);
 	        }
 	    }, {
 	        key: 'render',
@@ -20982,6 +21242,7 @@
 	                        'button',
 	                        { className: 'circular ui icon button',
 	                            'data-title': this.props.title,
+	                            'data-notebook': this.props.notebook,
 	                            onClick: this.handleDelete.bind(this) },
 	                        _react2.default.createElement('i', { className: 'icon remove' })
 	                    )
@@ -20992,7 +21253,9 @@
 	                    { className: 'content' },
 	                    _react2.default.createElement(
 	                        'a',
-	                        { className: 'header', onClick: this.handleClick.bind(this) },
+	                        { className: 'header', onClick: this.handleClick.bind(this),
+	                            'data-title': this.props.title,
+	                            'data-notebook': this.props.notebook },
 	                        this.props.title
 	                    ),
 	                    _react2.default.createElement(
@@ -31184,36 +31447,113 @@
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 	/**
-	 * Component to create accordion title
-	 * @props props.id The id attribute for this component's container
-	 * @props props.title The title for this accordion
+	 * Component to display a yes/no message
+	 *
+	 * @props props.modalId Message header
+	 * @props props.header Message header
+	 * @props props.icon Semantic ui icon
+	 * @props props.description Description of the confirmation
+	 * @props props.onConfirm Callback when user clicks 'Yes'
+	 * @props props.onCancel Callback when user clicks 'No'
 	 * */
 
-	var AccordionTitle = function (_Component) {
-	    _inherits(AccordionTitle, _Component);
+	var ConfirmationModal = function (_Component) {
+	    _inherits(ConfirmationModal, _Component);
 
-	    function AccordionTitle() {
-	        _classCallCheck(this, AccordionTitle);
+	    function ConfirmationModal() {
+	        _classCallCheck(this, ConfirmationModal);
 
-	        return _possibleConstructorReturn(this, Object.getPrototypeOf(AccordionTitle).apply(this, arguments));
+	        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(ConfirmationModal).call(this));
+
+	        _this.state = {
+	            show: false
+	        };
+	        return _this;
 	    }
 
-	    _createClass(AccordionTitle, [{
+	    _createClass(ConfirmationModal, [{
+	        key: 'handleYes',
+	        value: function handleYes(e) {
+	            this.props.onConfirm();
+	        }
+	    }, {
+	        key: 'handleNo',
+	        value: function handleNo(e) {
+	            this.props.onCancel();
+	        }
+	    }, {
+	        key: 'componentDidUpdate',
+	        value: function componentDidUpdate() {
+	            var _this2 = this;
+
+	            $('#confirmation-modal').modal({
+	                onHidden: function onHidden() {
+	                    _this2.props.hidden();
+	                },
+	                detachable: false
+	            });
+	            if (this.props.show) {
+	                $('#confirmation-modal').modal('show');
+	            }
+	        }
+	    }, {
 	        key: 'render',
 	        value: function render() {
 	            return _react2.default.createElement(
 	                'div',
-	                { className: 'title', id: this.props.id },
-	                _react2.default.createElement('i', { className: 'dropdown icon' }),
-	                this.props.title
+	                { className: 'ui basic modal', id: 'confirmation-modal', ref: 'confirmation_modal' },
+	                _react2.default.createElement('i', { className: 'close icon' }),
+	                _react2.default.createElement(
+	                    'div',
+	                    { className: 'header' },
+	                    this.props.header
+	                ),
+	                _react2.default.createElement(
+	                    'div',
+	                    { className: 'image content' },
+	                    _react2.default.createElement(
+	                        'div',
+	                        { className: 'image' },
+	                        _react2.default.createElement('i', { className: this.props.icon })
+	                    ),
+	                    _react2.default.createElement(
+	                        'div',
+	                        { className: 'description' },
+	                        _react2.default.createElement(
+	                            'p',
+	                            null,
+	                            this.props.description
+	                        )
+	                    )
+	                ),
+	                _react2.default.createElement(
+	                    'div',
+	                    { className: 'actions' },
+	                    _react2.default.createElement(
+	                        'div',
+	                        { className: 'two fluid ui inverted buttons' },
+	                        _react2.default.createElement(
+	                            'div',
+	                            { className: 'ui cancel red basic inverted button' },
+	                            _react2.default.createElement('i', { className: 'remove icon', onClick: this.handleNo.bind(this) }),
+	                            ' No'
+	                        ),
+	                        _react2.default.createElement(
+	                            'div',
+	                            { className: 'ui ok green basic inverted button', onClick: this.handleYes.bind(this) },
+	                            _react2.default.createElement('i', { className: 'checkmark icon' }),
+	                            ' Yes'
+	                        )
+	                    )
+	                )
 	            );
 	        }
 	    }]);
 
-	    return AccordionTitle;
+	    return ConfirmationModal;
 	}(_react.Component);
 
-	exports.default = AccordionTitle;
+	exports.default = ConfirmationModal;
 
 /***/ },
 /* 276 */
@@ -31240,39 +31580,84 @@
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 	/**
-	 * Component to create semantic ui accordion content
-	 * @props props.id The id attribute for this component container
-	 * @props props.content The content for the accordion
+	 * Component to show and render forms in modal window
+	 *
+	 * @props props.header Header for the modal form
+	 * @props props.inputs Array of JSX inputs
+	 * @props props.submit Callback when form is submitted
+	 * @props props.show Whether to show the modal form
+	 * @props
+	 * @props
+	 * @props
 	 * */
 
-	var AccordionContent = function (_Component) {
-	    _inherits(AccordionContent, _Component);
+	var ModalForm = function (_Component) {
+	    _inherits(ModalForm, _Component);
 
-	    function AccordionContent() {
-	        _classCallCheck(this, AccordionContent);
+	    function ModalForm() {
+	        _classCallCheck(this, ModalForm);
 
-	        return _possibleConstructorReturn(this, Object.getPrototypeOf(AccordionContent).apply(this, arguments));
+	        return _possibleConstructorReturn(this, Object.getPrototypeOf(ModalForm).call(this));
 	    }
 
-	    _createClass(AccordionContent, [{
+	    _createClass(ModalForm, [{
+	        key: 'handleSubmit',
+	        value: function handleSubmit() {
+	            this.props.submit();
+	        }
+	    }, {
+	        key: 'componentDidUpdate',
+	        value: function componentDidUpdate() {
+	            var _this2 = this;
+
+	            $('#modal-form').modal({
+	                detachable: false,
+	                onHidden: function onHidden() {
+	                    _this2.props.hidden();
+	                }
+	            });
+	            if (this.props.show) {
+	                $('#modal-form.modal').modal('show');
+	            }
+	        }
+	    }, {
 	        key: 'render',
 	        value: function render() {
 	            return _react2.default.createElement(
 	                'div',
-	                { className: 'content', id: this.props.id },
+	                { className: 'ui modal', id: 'modal-form' },
 	                _react2.default.createElement(
 	                    'div',
-	                    { className: 'transition hidden' },
-	                    this.props.content
+	                    { className: 'header' },
+	                    this.props.header
+	                ),
+	                _react2.default.createElement(
+	                    'div',
+	                    { className: 'content' },
+	                    this.props.inputs
+	                ),
+	                _react2.default.createElement(
+	                    'div',
+	                    { className: 'actions' },
+	                    _react2.default.createElement(
+	                        'button',
+	                        { className: 'ui cancel red button' },
+	                        'Cancel'
+	                    ),
+	                    _react2.default.createElement(
+	                        'button',
+	                        { className: 'ui approve green button', onClick: this.handleSubmit.bind(this) },
+	                        'Submit'
+	                    )
 	                )
 	            );
 	        }
 	    }]);
 
-	    return AccordionContent;
+	    return ModalForm;
 	}(_react.Component);
 
-	exports.default = AccordionContent;
+	exports.default = ModalForm;
 
 /***/ },
 /* 277 */
@@ -31375,17 +31760,31 @@
 	    }, {
 	        key: 'handleTitleChange',
 	        value: function handleTitleChange(e) {
+	            this.footer.noteModified();
 	            this.setState({ title: e.target.value });
 	        }
 	    }, {
 	        key: 'handleSave',
 	        value: function handleSave() {
-	            return this.props.save({
+	            var res = this.props.save({
 	                title: this.state.title,
 	                text: this.state.text,
 	                notebook: this.state.notebook,
 	                edit: this.state.edit
 	            });
+	            if (res && this.state.edit.notebook == null) {
+	                this.setState({
+	                    title: this.state.title,
+	                    text: this.state.text,
+	                    notebook: this.state.notebook,
+	                    edit: {
+	                        notebook: this.state.notebook,
+	                        title: res.title,
+	                        created: res.created
+	                    }
+	                });
+	            }
+	            return res;
 	        }
 	    }, {
 	        key: 'handleNewNote',
@@ -31416,12 +31815,12 @@
 	            });
 	        }
 	    }, {
-	        key: 'componentWillMount',
-	        value: function componentWillMount() {
+	        key: 'refreshNotebooks',
+	        value: function refreshNotebooks() {
 	            var opts = this.props.notebooks.map(function (notebook) {
 	                return _react2.default.createElement(
 	                    'option',
-	                    { value: notebook.name },
+	                    { key: notebook.name, value: notebook.name },
 	                    notebook.name
 	                );
 	            });
@@ -31429,6 +31828,11 @@
 	                notebookOptions: opts,
 	                notebook: this.props.notebooks.length > 0 ? this.props.notebooks[0].name : ''
 	            });
+	        }
+	    }, {
+	        key: 'componentWillMount',
+	        value: function componentWillMount() {
+	            this.refreshNotebooks();
 	        }
 	    }, {
 	        key: 'render',
@@ -31675,13 +32079,13 @@
 	                { className: 'editor-footer' },
 	                _react2.default.createElement(
 	                    'button',
-	                    { className: 'ui button labeled icon', onClick: this.handleCreate.bind(this) },
+	                    { className: 'ui button labeled secondary basic icon', onClick: this.handleCreate.bind(this) },
 	                    _react2.default.createElement('i', { className: 'icon add square' }),
 	                    ' New Note'
 	                ),
 	                _react2.default.createElement(
 	                    'button',
-	                    { className: 'ui button labeled icon ' + buttonHint, onClick: this.handleSave.bind(this) },
+	                    { className: 'ui button labeled primary basic icon ' + buttonHint, onClick: this.handleSave.bind(this) },
 	                    _react2.default.createElement('i', { className: saveIcon }),
 	                    saveText
 	                )
