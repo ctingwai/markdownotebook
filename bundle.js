@@ -31772,7 +31772,7 @@
 	                notebook: this.state.notebook,
 	                edit: this.state.edit
 	            });
-	            if (res && this.state.edit.notebook == null) {
+	            if (res) {
 	                this.setState({
 	                    title: this.state.title,
 	                    text: this.state.text,
