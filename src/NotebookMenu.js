@@ -244,7 +244,7 @@ export default class NotebookMenu extends Component {
                            onChange={this.handleKeyUp.bind(this)} />
                     <a className={createNbBtn}
                        onClick={this.createNotebook.bind(this)}>
-                       <i className={createNbIcon} /> CreateNbText</a>
+                       <i className={createNbIcon} /> {createNbText}</a>
                 </div>
                 <ConfirmationModal header={this.state.confirmation.header}
                                    show={this.state.confirmation.show}
