@@ -95,7 +95,7 @@ export default class NoteList extends Component {
                     </button>
                 );
                 notebooks.push(
-                    <h3 className='ui attached header notelist-header' key={item.name}
+                    <h3 className='ui attached header notelist-header' key={item.name + '-header'}
                             data-notebook={item.name}
                             onMouseLeave={this.hideAdditionalControls.bind(this)}
                             onMouseEnter={this.showAdditionalControls.bind(this)}>

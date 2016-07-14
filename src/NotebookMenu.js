@@ -107,7 +107,7 @@ export default class NotebookMenu extends Component {
         if(this.validateNotebook()) {
             if(this.props.onNotebookCreate(this.state.notebookName)) {
                 let notebooks = this.state.notebooks;
-                notebooks.push({name: this.state.notebookName, notes: []});
+                //notebooks.push({name: this.state.notebookName, notes: []});
                 this.setState({notebooks: notebooks, notebookName: '', createNotebook: 'created'});
             }
         }
