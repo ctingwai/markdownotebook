@@ -4,7 +4,7 @@ It is built with ReactJS and NodeJS, without any server-side communication.
 All notes are stored in the browser in JSON format using JSON.stringify()
 method. All notes will be converted from markdown into HTML using the markdown
 parser [marked](https://github.com/chjj/marked). The latest version ready to use
-can be found [here](https://mdnotebooks.geeknomad.xyz/).
+can be found [here](https://mdnotebooks.twcloud.tech/).
 
 # Installation
 1. Clone the entire repository into document root
