@@ -110,11 +110,13 @@ export default class NotebookMenu extends Component {
                 //notebooks.push({name: this.state.notebookName, notes: []});
                 this.setState({notebooks: notebooks, notebookName: '', createNotebook: 'created'});
             }
+        } else {
+            this.setState({createNotebook: 'failed'});
         }
     }
 
     handleKeyUp(e) {
-        if(this.state.createNotebook == 'created') {
+        if(this.state.createNotebook !== '') {
             this.setState({createNotebook: ''});
         }
         this.setState({notebookName: e.target.value});
@@ -227,6 +229,10 @@ export default class NotebookMenu extends Component {
             createNbBtn = 'ui labeled icon button secondary positive labeled icon';
             createNbIcon = 'icon checkmark';
             createNbText = 'Notebook Created';
+        } else if(this.state.createNotebook == 'failed') {
+            createNbBtn = 'ui labeled icon button secondary negative labeled icon';
+            createNbIcon = 'icon remove';
+            createNbText = 'Create Failed';
         }
         return (
             <div className='notebook-menu'>
