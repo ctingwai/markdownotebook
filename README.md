@@ -11,6 +11,10 @@ can be found [here](https://mdnotebooks.twcloud.tech/).
 2. Run `npm install --production`
 3. Refresh the page
 
+# Development
+1. Run `npm start` to start the development server
+2. Point your browser to `localhost:8080`
+
 # TODO
 - Lock notes with encryption
 - Note export and import
