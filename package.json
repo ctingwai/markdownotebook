@@ -20,7 +20,8 @@
     "webpack-dev-server": "^1.14.1"
   },
   "scripts": {
-    "start": "node_modules/.bin/webpack-dev-server --progress"
+    "start": "node_modules/.bin/webpack-dev-server --progress",
+    "build": "node node_modules/webpack/bin/webpack.js -p --config ./webpack.config.js"
   },
   "author": "Ting Wai",
   "license": "MIT"
