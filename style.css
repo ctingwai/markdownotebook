@@ -28,3 +28,28 @@ html body { background-color: #ddd; }
 .ui.header>.icon.edit-notebook-btn > i{
     margin-right: 0;
 }
+
+.github-ribbon {
+    width: 300px;
+    background: #e43;
+    position: absolute;
+    text-align: center;
+    line-height: 50px;
+    letter-spacing: 1px;
+    color: #f0f0f0;
+    position: absolute;
+    top: 15px;
+    right: -80px;
+    left: auto;
+    transform: rotate(25deg);
+    -webkit-transform: rotate(25deg);
+    z-index: 100;
+}
+.github-ribbon > a {
+    color: #fff;
+    font-size: 15px;
+    font-weight: bold;
+}
+.github-ribbon > a:hover {
+    color: #ddd;
+}
