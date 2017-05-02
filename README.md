@@ -9,6 +9,7 @@ can be found [here](https://mdnotebooks.twcloud.tech/).
 # Installation
 1. Clone the entire repository into document root
 2. Run `npm install --production`
+3. Run `npm run build`
 3. Refresh the page
 
 # Development
